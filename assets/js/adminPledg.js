@@ -98,11 +98,11 @@
                         merchantIdObject[country] = merchantId;
                     }
                 });
-                // for(const [c, v] of Object.entries(merchantIdObject)){
-                //     if(!Cs.includes(c) && c !== 'default'){
-                //         delete merchantIdObject[c];
-                //     }
-                // }
+                for(const [c, v] of Object.entries(merchantIdObject)){
+                    if(!Cs.includes(c) && c !== 'default'){
+                        delete merchantIdObject[c];
+                    }
+                }
                 $(merchant_id_input).val(JSON.stringify(merchantIdObject));
             }
         }
