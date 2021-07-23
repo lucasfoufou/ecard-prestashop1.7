@@ -49,7 +49,7 @@ class PledgIframeModuleFrontController extends ModuleFrontController
             $phoneNumber = $phoneUtil->parse($phone, $country_iso_code);
             $phone = $phoneUtil->format($phoneNumber, \libphonenumber\PhoneNumberFormat::E164);
         } catch (\libphonenumber\NumberParseException $e) {
-            Logger::addLog(sprintf($this->module->l('Pledg Payment Phone Number Parse error : %s'),($phone)));
+            PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Phone Number Parse error : %s'),($phone)));
             $phone = '';
         }
 
@@ -77,11 +77,22 @@ class PledgIframeModuleFrontController extends ModuleFrontController
 
         $metadata = $this->module->create_metadata();
 
+        $merchantId = $result['merchant_id'];
+        if($merchantIdDecoded = json_decode($merchantId)){
+            if(array_key_exists($this->context->country->iso_code, $merchantIdDecoded)){
+                $merchantId = $merchantIdDecoded->{$this->context->country->iso_code};
+            } else if(array_key_exists('default', $merchantIdDecoded)){
+                $merchantId = $merchantIdDecoded->default;
+            } else {
+                $merchantId = $merchantIdDecoded->{array_key_first($merchantIdDecoded)};
+            }
+        }
+
         $paramsPledg = array(
             'id' => $result['id'],
             'titlePayment' => $result['title'],
             'icon' => $result['icon'] != '' && file_exists(_PS_MODULE_DIR_ . $result['icon']) ? _MODULE_DIR_ . $result['icon'] : null,
-            'merchantUid' => $result['merchant_id'],
+            'merchantUid' => $merchantId,
             'mode' => (($result['mode'] == 1) ? 'master' : 'staging'),
             'title' => ( ($title)? implode(', ', $title) : '' ),
             'reference' => Pledg::PLEDG_REFERENCE_PREFIXE . $cart->id . "_" . time(),
@@ -101,14 +112,14 @@ class PledgIframeModuleFrontController extends ModuleFrontController
             'birthCountry' => '',
             'actionUrl' => $this->context->link->getModuleLink($this->module->name, 'validation', array(), true),
             'address' => [
-                'street' => $address_invoice->address1,
+                'street' => $address_invoice->address1." - ".$address_invoice->address2,
                 'city' => $address_invoice->city,
                 'zipcode' => $address_invoice->postcode,
                 'stateProvince' => '',
                 'country' => $country_iso_code_invoice
             ],
             'shippingAddress' => [
-                'street' => $address->address1,
+                'street' => $address->address1." - ".$address->address2,
                 'city' => $address->city,
                 'zipcode' => $address->postcode,
                 'stateProvince' => '',
