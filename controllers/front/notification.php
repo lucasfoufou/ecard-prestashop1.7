@@ -185,7 +185,7 @@ class PledgNotificationModuleFrontController extends ModuleFrontController
             // In this case the notification cames before the validation
             // An order has then to be validated and saved in DB
             $customer = New Customer($cart->id_customer);
-            $priceConverted = Tools::convertPrice($cart->getOrderTotal(), Currency::getIdByIsoCode($cart->getCurrency));
+            $priceConverted = Tools::convertPrice($cart->getOrderTotal(), $cart->id_currency);
             $total = str_replace(
                 '.',
                 '',
@@ -223,7 +223,7 @@ class PledgNotificationModuleFrontController extends ModuleFrontController
                 exit;
             }
             
-            $priceConverted = Tools::convertPrice($cart->getOrderTotal(), Currency::getIdByIsoCode($cart->getCurrency));
+            $priceConverted = Tools::convertPrice($cart->getOrderTotal(), $cart->id_currency);
             $total = str_replace(
                 '.',
                 '',
