@@ -1,22 +1,24 @@
 <?php
 
+use PrestaShop\PrestaShop\Adapter\Entity\Media;
+
 require_once _PS_MODULE_DIR_ . '/pledg/class/Pledgpaiements.php';
 class AdminPledgController extends ModuleAdminController
 {
-	public function __construct()
+    public function __construct()
     {
         $this->bootstrap = true; //Gestion de l'affichage en mode bootstrap 
         $this->table = Pledgpaiements::$definition['table']; //Table de l'objet
         $this->identifier = Pledgpaiements::$definition['primary']; //Clé primaire de l'objet
         $this->className = Pledgpaiements::class; //Classe de l'objet
         $this->lang = true; //Flag pour dire si utilisation de langues ou non
- 
+
         //Appel de la fonction parente pour pouvoir utiliser la traduction ensuite
         parent::__construct();
- 
+
         //Liste des champs de l'objet à afficher dans la liste
         $this->fields_list = [
-        	'status' => [
+            'status' => [
                 'title' => $this->l('Display'),
                 'lang' => true, //Flag pour dire d'utiliser la langue
                 'align' => 'left',
@@ -37,6 +39,7 @@ class AdminPledgController extends ModuleAdminController
                 'title' => $this->l('Merchant ID'),
                 'lang' => true, //Flag pour dire d'utiliser la langue
                 'align' => 'left',
+                'callback' => 'getMerchantId',
             ],
             'secret' => [
                 'title' => $this->l('Secret'),
@@ -49,30 +52,48 @@ class AdminPledgController extends ModuleAdminController
                 'align' => 'right',
             ]
         ];
- 
+
         //Ajout d'actions sur chaque ligne
         $this->addRowAction('edit');
         $this->addRowAction('delete');
     }
 
-    public function getStatus($value){
+    public function getStatus($value)
+    {
 
-    	$html = 'Non';
+        $html = 'Non';
 
-    	if($value == 1)
-    		$html = 'Oui';
+        if ($value == 1)
+            $html = 'Oui';
 
-    	return $html;
+        return $html;
     }
 
-    public function getMode($value){
+    public function getMode($value)
+    {
 
-    	$html = 'Dev';
+        $html = 'Dev';
 
-    	if($value == 1)
-    		$html = 'Prod';
+        if ($value == 1)
+            $html = 'Prod';
 
-    	return $html;
+        return $html;
+    }
+
+    public function getMerchantId($value)
+    {
+
+        $merchantId = $value;
+        if ($merchantIdDecoded = json_decode($merchantId)) {
+            if (array_key_exists($this->context->country->iso_code, $merchantIdDecoded)) {
+                $merchantId = $merchantIdDecoded->{$this->context->country->iso_code};
+            } else if (array_key_exists('default', $merchantIdDecoded)) {
+                $merchantId = $merchantIdDecoded->default;
+            } else {
+                $merchantId = $merchantIdDecoded->{array_key_first($merchantIdDecoded)};
+            }
+        }
+        return $merchantId;
     }
 
     /**
@@ -80,14 +101,32 @@ class AdminPledgController extends ModuleAdminController
      */
     public function initPageHeaderToolbar()
     {
- 
+
         //Bouton d'ajout
         $this->page_header_toolbar_btn['new'] = array(
             'href' => self::$currentIndex . '&add' . $this->table . '&token=' . $this->token,
             'desc' => $this->l('Add Payment'),
             'icon' => 'process-icon-new'
         );
- 
+
+        $sql = 'SELECT iso_code, m.name, cl.name
+                FROM ' . _DB_PREFIX_ . 'module_country modC 
+                LEFT JOIN ' . _DB_PREFIX_ . 'country c ON c.id_country = modC.id_country
+                LEFT JOIN ' . _DB_PREFIX_ . 'country_lang cl ON cl.id_country = c.id_country
+                LEFT JOIN ' . _DB_PREFIX_ . 'module m ON m.id_module = modC.id_module
+                WHERE m.name = "' . $this->module->name . '" and cl.id_lang = ' . $this->context->language->id;
+
+        $result = Db::getInstance()->ExecuteS($sql);
+        $arr = [];
+
+        foreach ($result as $country) {
+            $arr[$country['iso_code']] = $country['name'];
+        }
+
+        Media::addJsDef([
+            'pledgAvailableCountries' => $arr
+        ]);
+
         parent::initPageHeaderToolbar();
     }
 
@@ -98,7 +137,7 @@ class AdminPledgController extends ModuleAdminController
      */
     public function renderForm()
     {
-        $imgSrc = ($this->object->icon) ? (_MODULE_DIR_ . $this->object->icon) : null ;
+        $imgSrc = ($this->object->icon) ? (_MODULE_DIR_ . $this->object->icon) : null;
         $img = ($imgSrc) ? '<img src="' . $imgSrc . '" class="img-thumbnail" width="400">' : "";
         $shops = [];
         foreach (Shop::getShops(false) as $key => $shop) {
@@ -107,7 +146,7 @@ class AdminPledgController extends ModuleAdminController
                 'name' => $shop['name']
             );
         }
-        $this->fields_value['shops[]'] = explode(',',$this->object->shops);
+        $this->fields_value['shops[]'] = explode(',', $this->object->shops);
         //Définition du formulaire d'édition
         $this->fields_form = [
             //Entête
@@ -117,7 +156,7 @@ class AdminPledgController extends ModuleAdminController
             ],
             //Champs
             'input' => [
-            	[
+                [
                     'type' => 'text',
                     'label' => $this->l('Title'),
                     'name' => 'title',
@@ -131,13 +170,13 @@ class AdminPledgController extends ModuleAdminController
                     'name' => 'status', //Nom
                     'values' => [
                         [
-                        	'id' => 'prod',
+                            'id' => 'prod',
                             'value' => 1,
                             'label' => $this->l('Production')
                         ],
 
                         [
-                        	'id' => 'dev',
+                            'id' => 'dev',
                             'value' => 0,
                             'label' => $this->l('Test')
                         ],
@@ -150,13 +189,13 @@ class AdminPledgController extends ModuleAdminController
                     'name' => 'mode', //Nom
                     'values' => [
                         [
-                        	'id' => 'prod',
+                            'id' => 'prod',
                             'value' => 1,
                             'label' => $this->l('Production')
                         ],
 
                         [
-                        	'id' => 'dev',
+                            'id' => 'dev',
                             'value' => 0,
                             'label' => $this->l('Dev')
                         ],
@@ -174,14 +213,14 @@ class AdminPledgController extends ModuleAdminController
                     'type' => 'text',
                     'label' => $this->l('Secret'),
                     'name' => 'secret',
-                    'required' =>false,
+                    'required' => false,
                     'empty_message' => '',
                 ],
                 [
                     'type' => 'text',
                     'label' => $this->l('Min'),
                     'name' => 'min',
-                    'required' =>false,
+                    'required' => false,
                     'hint' => $this->l('Must be a number. Minimum transaction amount, zero does not define a minimum'),
                     'empty_message' => '',
                 ],
@@ -189,7 +228,7 @@ class AdminPledgController extends ModuleAdminController
                     'type' => 'text',
                     'label' => $this->l('Max'),
                     'name' => 'max',
-                    'required' =>false,
+                    'required' => false,
                     'hint' => $this->l('Must be a number. Maximum transaction amount, zero does not define a maximum'),
                     'empty_message' => '',
                 ],
@@ -197,7 +236,7 @@ class AdminPledgController extends ModuleAdminController
                     'type' => 'file',
                     'label' => $this->l('Icon'),
                     'name' => 'icon',
-                    'required' =>false,
+                    'required' => false,
                     'empty_message' => '',
                     'image' => $img,
                 ],
@@ -212,7 +251,7 @@ class AdminPledgController extends ModuleAdminController
                     'type' => 'text',
                     'label' => $this->l('Position'),
                     'name' => 'position',
-                    'required' =>false,
+                    'required' => false,
                     'empty_message' => '',
                 ],
                 [
@@ -240,7 +279,8 @@ class AdminPledgController extends ModuleAdminController
      * Process Add method
      * @return bool
      */
-    public function processAdd() {
+    public function processAdd()
+    {
         return $this->checkUploadIcon('add') ? parent::processAdd() : false;
     }
 
@@ -248,30 +288,30 @@ class AdminPledgController extends ModuleAdminController
      * Process Update method
      * @return bool
      */
-    public function processUpdate() {
+    public function processUpdate()
+    {
         return $this->checkUploadIcon('edit') ? parent::processUpdate() : false;
     }
 
     public function postProcess()
-	{
-        if (Tools::isSubmit('submitpledgadmin')) 
-		{
-			if(is_array(Tools::getValue('shops'))){
+    {
+        if (Tools::isSubmit('submitpledgadmin')) {
+            if (is_array(Tools::getValue('shops'))) {
                 $_POST['shops'] = implode(',', Tools::getValue('shops'));
-            }
-            else{
+            } else {
                 $_POST['shops'] = Tools::getValue('shops');
             }
- 		}
-		parent::postProcess();
-	}
+        }
+        parent::postProcess();
+    }
 
     /**
      * Check if icon uploaded is an image file
      * @param string $display
      * @return bool
      */
-    private function checkUploadIcon($display = 'add') {
+    private function checkUploadIcon($display = 'add')
+    {
         if ($_FILES['icon']['error'] == UPLOAD_ERR_NO_FILE) {
             return true;
         }
@@ -307,15 +347,16 @@ class AdminPledgController extends ModuleAdminController
      * @param $object
      * @return string
      */
-    private function uploadIcon($object) {
+    private function uploadIcon($object)
+    {
         if ($_FILES['icon']['error'] == UPLOAD_ERR_NO_FILE) {
             return '';
         }
 
-        $name = '/pledg/assets/img/' . $object->id . '-' .$_FILES['icon']['name'];
+        $name = '/pledg/assets/img/' . $object->id . '-' . $_FILES['icon']['name'];
 
         if (!file_exists(_PS_MODULE_DIR_ . '/pledg/assets/img/')) {
-            mkdir ( _PS_MODULE_DIR_ . '/pledg/assets/img/', 0777, true);
+            mkdir(_PS_MODULE_DIR_ . '/pledg/assets/img/', 0777, true);
         }
 
         if (
@@ -329,7 +370,6 @@ class AdminPledgController extends ModuleAdminController
             $this->errors[] = $this->l('Error on uploaded icon.');
             return '';
         }
-
     }
 
     /**
@@ -343,7 +383,7 @@ class AdminPledgController extends ModuleAdminController
         $object->icon = $this->uploadIcon($object);
         $object->save();
 
-        Logger::addLog($this->l('Create Pledg Payment #') . $object->id . ' : ' . $object->__toString(), 1, null, get_class($object), $object->id);
+        PrestaShopLogger::addLog($this->l('Create Pledg Payment #') . $object->id . ' : ' . $object->__toString(), 1, null, get_class($object), $object->id);
 
         return true;
     }
@@ -360,7 +400,7 @@ class AdminPledgController extends ModuleAdminController
         $object->icon = ($icon === '') ? $this->object->icon : $icon;
         $object->save();
 
-        Logger::addLog($this->l('Update Pledg Payment #') . $object->id . ' : ' . $object->__toString(), 1, null, get_class($object), $object->id);
+        PrestaShopLogger::addLog($this->l('Update Pledg Payment #') . $object->id . ' : ' . $object->__toString(), 1, null, get_class($object), $object->id);
 
         return true;
     }

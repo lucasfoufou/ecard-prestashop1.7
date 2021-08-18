@@ -15,10 +15,10 @@ class PledgLogModuleFrontController extends ModuleFrontController
             $id = Tools::getValue("id");
             $class = Tools::getValue("class");
 
-            Logger::addLog($message, 1, null, $class, $id);
+            PrestaShopLogger::addLog($message, 1, null, $class, $id);
 
             $json = array(
-                'status' => Logger::addLog($message, $type, null, $class, $id, true),
+                'status' => PrestaShopLogger::addLog($message, $type, null, $class, $id, true),
             );
             die(Tools::jsonEncode($json));
         }

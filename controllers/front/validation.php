@@ -25,15 +25,15 @@ class PledgValidationModuleFrontController extends ModuleFrontController
 
         $reference = null;
         $reference = $_POST['reference'] ?? $_POST['transaction'];
-        Logger::addLog(sprintf($this->module->l('Pledg Payment Validation - Reference payment : %s'),$reference));
+        PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Validation - Reference payment : %s'),$reference));
 
         if (empty($reference)) {
-            Logger::addLog($this->module->l('Pledg Payment Validation - Reference payment is null'),2);
+            PrestaShopLogger::addLog($this->module->l('Pledg Payment Validation - Reference payment is null'),2);
         }
 
         $cartId = intval(str_replace(Pledg::PLEDG_REFERENCE_PREFIXE, '', $reference));
         if (!is_int($cartId)) {
-            Logger::addLog(
+            PrestaShopLogger::addLog(
                 sprintf($this->module->l('Pledg Payment Validation - Reference ID doesn\'t seems to be a associated to a Cart : %s'),
                     $cartId),
                 2);
@@ -44,7 +44,7 @@ class PledgValidationModuleFrontController extends ModuleFrontController
         $cart = new Cart($cartId);
         $order = new Order(Order::getIdByCartId((int)$cartId));
         if (!Validate::isLoadedObject($cart) && !Validate::isLoadedObject($order)) {
-            Logger::addLog(sprintf($this->module->l('Pledg Payment Validation - Cart doesn\t exist : '),$cartId),2);
+            PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Validation - Cart doesn\t exist : '),$cartId),2);
             Tools::redirect('index.php?controller=order&step=1');
         }
 		$currency = new Currency((int) $cart->id_currency);
@@ -64,7 +64,7 @@ class PledgValidationModuleFrontController extends ModuleFrontController
             );
         }
         else{
-            Logger::addLog(sprintf($this->module->l('Pledg Payment Validation - Reference ID has already been validated by notification : %s'),$cartId));
+            PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Validation - Reference ID has already been validated by notification : %s'),$cartId));
         }
         Tools::redirect(
             'index.php?controller=order-confirmation&id_cart='.
