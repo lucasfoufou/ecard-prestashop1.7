@@ -26,7 +26,6 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-use PaymentModule;
 use PrestaShop\PrestaShop\Core\Grid\Filter\Filter;
 use PrestaShop\PrestaShop\Core\Payment\PaymentOption;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -39,7 +38,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-class Pledg extends PaymentModule
+class Pledg extends PaymentModuleCore
 {
 
     const PLEDG_REFERENCE_PREFIXE = 'PLEDG_';
