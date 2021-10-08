@@ -50,7 +50,7 @@ class Pledg extends PaymentModuleCore
     {
         $this->name = 'pledg';
         $this->tab = 'payments_gateways';
-        $this->version = '2.2.1';
+        $this->version = '2.2.2';
         $this->author = 'LucasFougeras';
         $this->controllers = array('payment', 'validation', 'notification');
         $this->currencies = true;
@@ -366,8 +366,10 @@ class Pledg extends PaymentModuleCore
 
     public function hookActionAdminControllerSetMedia()
     {
-        $this->context->controller->addJS('modules/' . $this->name . '/assets/js/adminPledg.js');
-        $this->context->controller->addCSS('modules/' . $this->name . '/assets/css/pledg.css');
+        if($this->context->controller->controller_name==="AdminPledg"){
+            $this->context->controller->addJS('modules/' . $this->name . '/assets/js/adminPledg.js');
+            $this->context->controller->addCSS('modules/' . $this->name . '/assets/css/pledg.css');
+        }
     }
 
     /**
