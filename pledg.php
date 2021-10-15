@@ -50,7 +50,7 @@ class Pledg extends PaymentModuleCore
     {
         $this->name = 'pledg';
         $this->tab = 'payments_gateways';
-        $this->version = '2.2.2';
+        $this->version = '2.2.3';
         $this->author = 'LucasFougeras';
         $this->controllers = array('payment', 'validation', 'notification');
         $this->currencies = true;

@@ -32,28 +32,30 @@ class PledgNotificationModuleFrontController extends ModuleFrontController
             exit;
         }
 
-        if(count((array)$data) == 1 && !isset($data->signature)) {
+        if (count((array)$data) == 1 && !isset($data->signature)) {
             PrestaShopLogger::addLog(
                 sprintf(
                     $this->module->l('Pledg Payment Notification Mode Transfert Exception - Signature doesn\'t found : %s'),
-                    serialize($data)),
-                2);
+                    serialize($data)
+                ),
+                2
+            );
             header('HTTP/1.0 403 Forbidden');
             echo 'Signature doesn\'t found';
             exit;
-        }
-        elseif (count((array)$data) == 1 && isset($data->signature)) {
+        } elseif (count((array)$data) == 1 && isset($data->signature)) {
             // Transfer signé
             try {
                 $signatureDecode = \Firebase\JWT\JWT::decode($data->signature, $pledgPaiement->secret, ['HS256']);
             } catch (Throwable $e) {
-                PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode Transfert Exception : %s'),$e->getMessage()),2);
+                PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode Transfert Exception : %s'), $e->getMessage()), 2);
                 header('HTTP/1.0 403 Forbidden');
                 echo $e->getMessage();
                 exit;
             }
             PrestaShopLogger::addLog(
-                sprintf($this->module->l('Pledg Payment Notification Mode Transfert reference : %s'),$signatureDecode->reference));
+                sprintf($this->module->l('Pledg Payment Notification Mode Transfert reference : %s'), $signatureDecode->reference)
+            );
             // Validate Order
             $this->validOrder(
                 $signatureDecode->reference,
@@ -63,34 +65,35 @@ class PledgNotificationModuleFrontController extends ModuleFrontController
                 $_GET['currency']
             );
             exit;
-        }
-        elseif (isset($data->transfer_order_item_uid)) {
-			// Mode Transfert non signé
-			$dataToCheck = array(
+        } elseif (isset($data->transfer_order_item_uid)) {
+            // Mode Transfert non signé
+            $dataToCheck = array(
                 "reference",
-				"created",
+                "created",
                 "transfer_order_item_uid",
-				"amount_cents"
+                "amount_cents"
             );
-            PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode Transfert NS - Data receive : %s'),serialize($data)));
-            try{
+            PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode Transfert NS - Data receive : %s'), serialize($data)));
+            try {
                 foreach ($dataToCheck as $dataCheck) {
                     if (!isset($data->{$dataCheck})) {
                         PrestaShopLogger::addLog(
                             sprintf(
                                 $this->module->l('Pledg Payment Notification Mode Transfert NS Exception - Params %s is missing (data receive %s).'),
-                                $dataCheck,serialize($data)),
-                            2);
+                                $dataCheck,
+                                serialize($data)
+                            ),
+                            2
+                        );
                         header('HTTP/1.0 403 Forbidden');
                         echo 'Params ' . $dataCheck . ' is missing (data receive %s)';
                         exit;
                     }
                 }
-            }
-            catch (Throwable $e){
+            } catch (Throwable $e) {
                 PrestaShopLogger::addLog($e->getMessage(), 2);
             }
-            
+
             // Validate Order
             $this->validOrder(
                 $data->reference,
@@ -100,8 +103,7 @@ class PledgNotificationModuleFrontController extends ModuleFrontController
                 $_GET['currency']
             );
             exit;
-        }
-        else {
+        } else {
             // Mode Back
             $dataToCheck = array(
                 "created_at",
@@ -111,34 +113,41 @@ class PledgNotificationModuleFrontController extends ModuleFrontController
                 "sandbox",
                 "status"
             );
-            PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode Back - Data receive : %s'),serialize($data)),1);
+            PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode Back - Data receive : %s'), serialize($data)), 1);
             $stringToHash = '';
             foreach ($dataToCheck as $dataCheck) {
                 if (!isset($data->{$dataCheck})) {
                     PrestaShopLogger::addLog(
                         sprintf(
                             $this->module->l('Pledg Payment Notification Mode Back Exception - Params %s is missing (data receive %s).'),
-                            $dataCheck,serialize($data)),
-                            2);
-                            
-                            header('HTTP/1.0 403 Forbidden');
-                            echo 'Params ' . $dataCheck . ' is missing (data receive %s)';
-                            exit;
-                        }
-                        if ($stringToHash != '') {
-                            $stringToHash .= $pledgPaiement->secret;
-                        }
-                        $stringToHash .= $dataCheck . '=' . $data->{$dataCheck};
-                    }
-                    $hash = strtoupper(hash('sha256', $stringToHash));
-                    if ($hash !== $data->signature) {
-                        PrestaShopLogger::addLog(
-                            sprintf($this->module->l('Pledg Payment Hash doesn\'t match : Excepted : %s - Generated : %s'),
-                            $data->signature,$hash));
-                            header('HTTP/1.0 403 Forbidden');
-                            echo 'Pledg Payment Hash doesn\'t match';
-                            exit;
-                        }
+                            $dataCheck,
+                            serialize($data)
+                        ),
+                        2
+                    );
+
+                    header('HTTP/1.0 403 Forbidden');
+                    echo 'Params ' . $dataCheck . ' is missing (data receive %s)';
+                    exit;
+                }
+                if ($stringToHash != '') {
+                    $stringToHash .= $pledgPaiement->secret;
+                }
+                $stringToHash .= $dataCheck . '=' . $data->{$dataCheck};
+            }
+            $hash = strtoupper(hash('sha256', $stringToHash));
+            if ($hash !== $data->signature) {
+                PrestaShopLogger::addLog(
+                    sprintf(
+                        $this->module->l('Pledg Payment Hash doesn\'t match : Excepted : %s - Generated : %s'),
+                        $data->signature,
+                        $hash
+                    )
+                );
+                header('HTTP/1.0 403 Forbidden');
+                echo 'Pledg Payment Hash doesn\'t match';
+                exit;
+            }
             // Validate Order
             $this->validOrder(
                 $data->reference,
@@ -158,41 +167,48 @@ class PledgNotificationModuleFrontController extends ModuleFrontController
      * @param $amountCents
      * @param string $mode
      */
-    public function validOrder($reference, $amountCents, $chargeId, $mode = 'TRANSFERT', $currencyIso = null) {
+    public function validOrder($reference, $amountCents, $chargeId, $mode = 'TRANSFERT', $currencyIso = null)
+    {
         $cartId = intval(str_replace(Pledg::PLEDG_REFERENCE_PREFIXE, '', $reference));
         $cart = new Cart($cartId);
-        try{
+        try {
             $orderId = Order::getOrderByCartId($cartId);
             $order = new Order($orderId);
-        }
-        catch (Throwable $e){
+        } catch (Throwable $e) {
             PrestaShopLogger::addLog($e->getMessage(), 2);
         }
         if (!Validate::isLoadedObject($order) && !Validate::isLoadedObject($cart)) {
             PrestaShopLogger::addLog(
-                sprintf($this->module->l("Pledg Payment Notification Mode %s Can't load cart ID : %s"),
-                    $mode,$cartId),
-                2);
+                sprintf(
+                    $this->module->l("Pledg Payment Notification Mode %s Can't load cart ID : %s"),
+                    $mode,
+                    $cartId
+                ),
+                2
+            );
             header('HTTP/1.0 403 Forbidden');
             echo 'Can\'t load cart ID : ' . $cartId;
             exit;
         }
-        if(!Validate::isLoadedObject($order)){
+        if (!Validate::isLoadedObject($order)) {
             sleep(3);
             //Waiting buffer to be sure that the validation and the notification doesn't occur at the same time
         }
-        if(!Validate::isLoadedObject($order)){
+        if (!Validate::isLoadedObject($order)) {
             // In this case the notification cames before the validation
             // An order has then to be validated and saved in DB
-            $customer = New Customer($cart->id_customer);
+            $customer = new Customer($cart->id_customer);
             $priceConverted = Tools::convertPrice($cart->getOrderTotal(), $cart->id_currency);
             $total = str_replace(
                 '.',
                 '',
                 number_format($priceConverted, 2, '.', '')
             );
-            if (intval($amountCents) !== intval($total)) {
-                PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode %s Exception - Total not match. %s - %s - %s'),$mode,$amountCents, $total));
+            if (
+                (intval($amountCents) !== intval($total)) &&
+                ((abs(intval($total) - intval($amountCents)) / intval($total)) > 0.01)
+            ) {
+                PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode %s Exception - Total not match. %s - %s - %s'), $mode, $amountCents, $total));
                 header('HTTP/1.0 403 Forbidden');
                 echo 'Total not match';
                 exit;
@@ -201,42 +217,44 @@ class PledgNotificationModuleFrontController extends ModuleFrontController
                 (int)($cartId),
                 Configuration::get('PS_OS_PAYMENT'),
                 $priceConverted,
-                $this->module->name."_".$mode,
+                $this->module->name . "_" . $mode,
                 null,
                 array('transaction_id' => $chargeId),
                 null,
                 false,
                 $customer->secure_key
             );
-            PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode %s - Order validated by notication (even before validation).'),$mode));
+            PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode %s - Order validated by notication (even before validation).'), $mode));
 
             $pledgpaiementsConfirm = new PledgpaiementsConfirm();
             $pledgpaiementsConfirm->id_cart = $cartId;
             $pledgpaiementsConfirm->reference_pledg = $reference;
             $pledgpaiementsConfirm->save();
-        }
-        else{
-            if($order->current_state === Configuration::get("PS_OS_OUTOFSTOCK_PAID") || $order->current_state === Configuration::get("PS_OS_PAYMENT")){
-                PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode %s Exception - Order already notified.'),$mode));
+        } else {
+            if ($order->current_state === Configuration::get("PS_OS_OUTOFSTOCK_PAID") || $order->current_state === Configuration::get("PS_OS_PAYMENT")) {
+                PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode %s Exception - Order already notified.'), $mode));
                 header('HTTP/1.0 403 Forbidden');
                 echo 'Already notified';
                 exit;
             }
-            
+
             $priceConverted = Tools::convertPrice($cart->getOrderTotal(), $cart->id_currency);
             $total = str_replace(
                 '.',
                 '',
                 number_format($priceConverted, 2, '.', '')
             );
-            if (intval($amountCents) !== intval($total)) {
-                PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode %s Exception - Total not match. %s - %s - %s'),$mode,$amountCents, $total));
+            if (
+                (intval($amountCents) !== intval($total)) &&
+                ((abs(intval($total) - intval($amountCents)) / intval($total)) > 0.01)
+            ) {
+                PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode %s Exception - Total not match. %s - %s - %s'), $mode, $amountCents, $total));
                 header('HTTP/1.0 403 Forbidden');
                 echo 'Total not match';
                 exit;
             }
-            try{
-                $order_state = ( $order->current_state === Configuration::get("PS_OS_OUTOFSTOCK_UNPAID")) ? "PS_OS_OUTOFSTOCK_PAID" : "PS_OS_PAYMENT";
+            try {
+                $order_state = ($order->current_state === Configuration::get("PS_OS_OUTOFSTOCK_UNPAID")) ? "PS_OS_OUTOFSTOCK_PAID" : "PS_OS_PAYMENT";
                 $history = new OrderHistory();
                 $history->id_order = (int) $orderId;
                 $history->changeIdOrderState((int) Configuration::get($order_state), $history->id_order);
@@ -244,14 +262,13 @@ class PledgNotificationModuleFrontController extends ModuleFrontController
                 $history->save();
                 Db::getInstance()->update('order_payment', array(
                     'transaction_id' => pSQL($chargeId),
-                    'payment_method' => pSQL($order->payment."_".$mode),
-                ),  'order_reference = "'.pSQL($order->reference).'"');
+                    'payment_method' => pSQL($order->payment . "_" . $mode),
+                ),  'order_reference = "' . pSQL($order->reference) . '"');
+            } catch (Throwable $e) {
+                PrestaShopLogger::addLog("Pledg Payment Notification Exception : " . $e->getMessage() . " Can be ignored if next notification succeeds.", 3);
             }
-            catch (Throwable $e){
-                PrestaShopLogger::addLog("Pledg Payment Notification Exception : " . $e->getMessage()." Can be ignored if next notification succeeds.",3);
-            }
-            PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode %s - Order validated by notication.'),$mode), 1, null, null, null, true);
-            
+            PrestaShopLogger::addLog(sprintf($this->module->l('Pledg Payment Notification Mode %s - Order validated by notication.'), $mode), 1, null, null, null, true);
+
             $pledgpaiementsConfirm = new PledgpaiementsConfirm();
             $pledgpaiementsConfirm->id_cart = $order->id_cart;
             $pledgpaiementsConfirm->reference_pledg = $reference;

@@ -2,6 +2,10 @@
 Repo pour prestashop 1.7
 
 ## Changelog
+### 2.2.3
+- Prevent the plugin to block a notification when notified amount is different from order amount for less than 1% (to prevent a round or conversion false negative)
+- Don't send birthday when it is null
+  
 ### 2.2.2
 - Only load Js and Css when the controller is "AdminPledg"
 - Add a security to prevent the plugin from reverting a notification during the validation (in a case where the validation happens after the notification)

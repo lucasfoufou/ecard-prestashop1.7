@@ -127,7 +127,7 @@ class PledgIframeModuleFrontController extends ModuleFrontController
             ],
         );
         
-        if($customer->birthday != '0000-00-00'){
+        if($customer->birthday != null && $customer->birthday != '0000-00-00'){
             $paramsPledg['birthDate'] = $customer->birthday;
         }
 
