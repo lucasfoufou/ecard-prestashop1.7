@@ -52,7 +52,7 @@ class PledgValidationModuleFrontController extends ModuleFrontController
         }
         $currency = new Currency((int) $cart->id_currency);
         $customer = new Customer($cart->id_customer);
-        $priceConverted = $this->context->currentLocale->formatPrice($cart->getOrderTotal(), $currency->iso_code);
+        $priceConverted = $cart->getOrderTotal();
         if (!Validate::isLoadedObject($order)) {
             if ($order->current_state !== Configuration::get("PS_OS_OUTOFSTOCK_PAID") && $order->current_state !== Configuration::get("PS_OS_PAYMENT")) {
                 $this->module->validateOrder(

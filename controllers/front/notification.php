@@ -198,7 +198,19 @@ class PledgNotificationModuleFrontController extends ModuleFrontController
             // In this case the notification cames before the validation
             // An order has then to be validated and saved in DB
             $customer = new Customer($cart->id_customer);
-            $priceConverted = Tools::convertPrice($cart->getOrderTotal(), $cart->id_currency);
+            if ($cart->getCurrency != $currencyIso && $currencyIso != null) {
+                PrestaShopLogger::addLog(
+                    sprintf($this->module->l('Pledg Payment Notification Mode %s Currency conversion. %s - %s - %s'),
+                    $mode, $cart->getOrderTotal(), $cart->getCurrency,Tools::convertPrice($cart->getOrderTotal(), Currency::getIdByIsoCode($cart->getCurrency), $currencyIso)));
+                    $priceConverted = Tools::convertPrice($cart->getOrderTotal(), Currency::getIdByIsoCode($cart->getCurrency), $currencyIso);
+            }
+            else
+            {
+                PrestaShopLogger::addLog(
+                    sprintf($this->module->l('Pledg Payment Notification Mode %s No currency conversion. %s - %s - %s'),
+                    $mode, $cart->getOrderTotal(), $cart->getCurrency, Tools::convertPrice($cart->getOrderTotal(), Currency::getIdByIsoCode($cart->getCurrency), $currencyIso)));
+                $priceConverted = $cart->getOrderTotal();
+            }
             $total = str_replace(
                 '.',
                 '',
@@ -238,7 +250,19 @@ class PledgNotificationModuleFrontController extends ModuleFrontController
                 exit;
             }
 
-            $priceConverted = Tools::convertPrice($cart->getOrderTotal(), $cart->id_currency);
+            if ($cart->getCurrency != $currencyIso && $currencyIso != null) {
+                PrestaShopLogger::addLog(
+                    sprintf($this->module->l('Pledg Payment Notification Mode %s Currency conversion. %s - %s - %s'),
+                    $mode, $cart->getOrderTotal(), $cart->getCurrency,Tools::convertPrice($cart->getOrderTotal(), Currency::getIdByIsoCode($cart->getCurrency), $currencyIso)));
+                    $priceConverted = Tools::convertPrice($cart->getOrderTotal(), Currency::getIdByIsoCode($cart->getCurrency), $currencyIso);
+            }
+            else
+            {
+                PrestaShopLogger::addLog(
+                    sprintf($this->module->l('Pledg Payment Notification Mode %s No currency conversion. %s - %s - %s'),
+                    $mode, $cart->getOrderTotal(), $cart->getCurrency, Tools::convertPrice($cart->getOrderTotal(), Currency::getIdByIsoCode($cart->getCurrency), $currencyIso)));
+                $priceConverted = $cart->getOrderTotal();
+            }
             $total = str_replace(
                 '.',
                 '',
