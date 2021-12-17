@@ -2,6 +2,9 @@
 Repo pour prestashop 1.7
 
 ## Changelog
+### 2.2.5
+- Extend PaymentModule instead of PaymentModuleCore
+  
 ### 2.2.4
 - Only convert amount received in notification when the currency is different from the cart
   

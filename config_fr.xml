@@ -2,7 +2,7 @@
 <module>
     <name>pledg</name>
     <displayName><![CDATA[Pledg - Payer &agrave; plusieurs]]></displayName>
-    <version><![CDATA[2.2.2]]></version>
+    <version><![CDATA[2.2.5]]></version>
     <description><![CDATA[Ce module vous permet d&rsquo;accepter des paiements par Pledg.]]></description>
     <author><![CDATA[LucasFougeras]]></author>
     <tab><![CDATA[payments_gateways]]></tab>

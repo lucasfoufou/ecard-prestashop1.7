@@ -38,7 +38,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-class Pledg extends PaymentModuleCore
+class Pledg extends PaymentModule
 {
 
     const PLEDG_REFERENCE_PREFIXE = 'PLEDG_';
@@ -50,7 +50,7 @@ class Pledg extends PaymentModuleCore
     {
         $this->name = 'pledg';
         $this->tab = 'payments_gateways';
-        $this->version = '2.2.4';
+        $this->version = '2.2.5';
         $this->author = 'LucasFougeras';
         $this->controllers = array('payment', 'validation', 'notification');
         $this->currencies = true;
